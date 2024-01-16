@@ -1,71 +1,258 @@
-# Getting Started with Create React App
+# Flask Code Challenge - Superheroes
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+For this assessment, you'll be working on an API for tracking heroes and their
+superpowers.
 
-## Available Scripts
+In this repo, there is a Flask application with some features built out. There
+is also a fully built React frontend application, so you can test if your API is
+working.
 
-In the project directory, you can run:
+Your job is to build out the Flask API to add the functionality described in the
+deliverables below.
 
-### `npm start`
+## Setup
 
-Runs the app in the development mode.\
-Open : "http://localhost:5000",
- to view it in the browser.
+To download the dependencies for the frontend and backend, run:
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```sh
+pipenv install
+npm install --prefix client
+```
 
-### `npm test`
+There is some starter code in the `app/seed.py` file so that once you've
+generated the models, you'll be able to create data to test your application.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+You can run your Flask API on [`localhost:5555`](http://localhost:5555) by running:
 
-### `npm run build`
+```sh
+python app.py
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+You can run your React app on [`localhost:4000`](http://localhost:4000) by running:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```sh
+npm start --prefix client
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+You are not being assessed on React, and you don't have to update any of the React
+code; the frontend code is available just so that you can test out the behavior
+of your API in a realistic setting.
 
-### `npm run eject`
+There are also tests included which you can run using `pytest -x` to check your work.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Depending on your preference, you can either check your progress by:
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Running `pytest -x` and seeing if your code passes the tests
+- Running the React application in the browser and interacting with the API via
+  the frontend
+- Running the Flask server and using Postman to make requests
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Models
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+You need to create the following relationships:
 
-## Learn More
+- A `Hero` has many `Power`s through `HeroPower`
+- A `Power` has many `Hero`s through `HeroPower`
+- A `HeroPower` belongs to a `Hero` and belongs to a `Power`
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Start by creating the models and migrations for the following database tables:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+![domain diagram](domain.png)
 
-### Code Splitting
+Add any code needed in the model files to establish the relationships.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Then, run the migrations and seed file:
 
-### Analyzing the Bundle Size
+```sh
+flask db upgrade
+python app/seed.py
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+> If you aren't able to get the provided seed file working, you are welcome to
+> generate your own seed data to test the application.
 
-### Making a Progressive Web App
+## Validations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Add validations to the `HeroPower` model:
 
-### Advanced Configuration
+- `strength` must be one of the following values: 'Strong', 'Weak', 'Average'
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Add validations to the `Power` model:
 
-### Deployment
+- `description` must be present and at least 20 characters long
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Routes
 
-### `npm run build` fails to minify
+Set up the following routes. Make sure to return JSON data in the format
+specified along with the appropriate HTTP verb.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### GET /heroes
+
+Return JSON data in the format below:
+
+```json
+[
+  { "id": 1, "name": "Kamala Khan", "super_name": "Ms. Marvel" },
+  { "id": 2, "name": "Doreen Green", "super_name": "Squirrel Girl" },
+  { "id": 3, "name": "Gwen Stacy", "super_name": "Spider-Gwen" }
+]
+```
+
+### GET /heroes/:id
+
+If the `Hero` exists, return JSON data in the format below:
+
+```json
+{
+  "id": 1,
+  "name": "Kamala Khan",
+  "super_name": "Ms. Marvel",
+  "powers": [
+    {
+      "id": 1,
+      "name": "super strength",
+      "description": "gives the wielder super-human strengths"
+    },
+    {
+      "id": 2,
+      "name": "flight",
+      "description": "gives the wielder the ability to fly through the skies at supersonic speed"
+    }
+  ]
+}
+```
+
+If the `Hero` does not exist, return the following JSON data, along with
+the appropriate HTTP status code:
+
+```json
+{
+  "error": "Hero not found"
+}
+```
+
+### GET /powers
+
+Return JSON data in the format below:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "super strength",
+    "description": "gives the wielder super-human strengths"
+  },
+  {
+    "id": 1,
+    "name": "flight",
+    "description": "gives the wielder the ability to fly through the skies at supersonic speed"
+  }
+]
+```
+
+### GET /powers/:id
+
+If the `Power` exists, return JSON data in the format below:
+
+```json
+{
+  "id": 1,
+  "name": "super strength",
+  "description": "gives the wielder super-human strengths"
+}
+```
+
+If the `Power` does not exist, return the following JSON data, along with
+the appropriate HTTP status code:
+
+```json
+{
+  "error": "Power not found"
+}
+```
+
+### PATCH /powers/:id
+
+This route should update an existing `Power`. It should accept an object with
+the following properties in the body of the request:
+
+```json
+{
+  "description": "Updated description"
+}
+```
+
+If the `Power` exists and is updated successfully (passes validations), update
+its description and return JSON data in the format below:
+
+```json
+{
+  "id": 1,
+  "name": "super strength",
+  "description": "Updated description"
+}
+```
+
+If the `Power` does not exist, return the following JSON data, along with
+the appropriate HTTP status code:
+
+```json
+{
+  "error": "Power not found"
+}
+```
+
+If the `Power` is **not** updated successfully (does not pass validations),
+return the following JSON data, along with the appropriate HTTP status code:
+
+```json
+{
+  "errors": ["validation errors"]
+}
+```
+
+### POST /hero_powers
+
+This route should create a new `HeroPower` that is associated with an
+existing `Power` and `Hero`. It should accept an object with the following
+properties in the body of the request:
+
+```json
+{
+  "strength": "Average",
+  "power_id": 1,
+  "hero_id": 3
+}
+```
+
+If the `HeroPower` is created successfully, send back a response with the data
+related to the `Hero`:
+
+```json
+{
+  "id": 1,
+  "name": "Kamala Khan",
+  "super_name": "Ms. Marvel",
+  "powers": [
+    {
+      "id": 1,
+      "name": "super strength",
+      "description": "gives the wielder super-human strengths"
+    },
+    {
+      "id": 2,
+      "name": "flight",
+      "description": "gives the wielder the ability to fly through the skies at supersonic speed"
+    }
+  ]
+}
+```
+
+If the `HeroPower` is **not** created successfully, return the following
+JSON data, along with the appropriate HTTP status code:
+
+```json
+{
+  "errors": ["validation errors"]
+}
+```
